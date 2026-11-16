@@ -390,15 +390,7 @@ fun SettingsTabContent(
             onValueSelected = { selectedModel = it }
         )
 
-        // 3. Overlay Position (8 Anchor Positions)
-        Text("Floating Bubble Position:", color = RuachTextSecondary, fontSize = 13.sp)
-        DropdownSelector(
-            items = ConfigManager.POSITION_OPTIONS,
-            selectedValue = selectedPosition,
-            onValueSelected = { selectedPosition = it }
-        )
-
-        // 4. Autostart on Phone Boot
+        // 3. Autostart on Phone Boot
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -448,17 +440,9 @@ fun SettingsTabContent(
                 onClick = {
                     config.apiKey = apiKey
                     config.modelName = selectedModel
-                    config.overlayPosition = selectedPosition
                     config.startOnBoot = startOnBoot
                     config.systemPrompt = systemPrompt
 
-                    if (RuachOverlayService.isRunning.value) {
-                        context.startService(
-                            Intent(context, RuachOverlayService::class.java).apply {
-                                action = RuachOverlayService.ACTION_UPDATE_POSITION
-                            }
-                        )
-                    }
                     Toast.makeText(context, "Settings saved!", Toast.LENGTH_SHORT).show()
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = RuachTealBtn)

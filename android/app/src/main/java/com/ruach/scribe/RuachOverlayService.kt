@@ -70,6 +70,14 @@ class RuachOverlayService : Service() {
         startForeground(NOTIFICATION_ID, buildNotification())
         showFloatingOverlay()
         _isRunning.value = true
+
+        serviceScope.launch {
+            RuachAccessibilityService.isTextFieldFocused.collect { focused ->
+                val view = overlayView ?: return@collect
+                val shouldShow = focused || view.state != OverlayState.IDLE
+                view.visibility = if (shouldShow) View.VISIBLE else View.GONE
+            }
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -174,9 +182,12 @@ class RuachOverlayService : Service() {
         )
 
         layoutParams = params
-        applyAnchorToParams(params)
+        params.gravity = Gravity.BOTTOM or Gravity.END
+        params.x = (16 * density).toInt()
+        params.y = (320 * density).toInt()
 
         val view = RuachFloatingView(this)
+        view.visibility = if (RuachAccessibilityService.isTextFieldFocused.value) View.VISIBLE else View.GONE
         overlayView = view
         windowManager.addView(view, params)
     }
@@ -410,7 +421,7 @@ class RuachOverlayService : Service() {
             addUpdateListener {
                 phase += 0.065f
                 swirlAngle = (swirlAngle + 5.2f) % 360f
-                smoothedLevel = smoothedLevel * 0.80f + audioLevel * 0.20f
+                smoothedLevel = smoothedLevel * 0.55f + audioLevel * 0.45f
                 invalidate()
             }
         }
@@ -560,7 +571,7 @@ class RuachOverlayService : Service() {
             locked: Boolean
         ) {
             val breath = ((sin(phase.toDouble()) + 1.0) * 0.5).toFloat()
-            val expansion = if (active) (breath * 5f + smoothedLevel * 12f) * d else (breath * 2.5f) * d
+            val expansion = if (active) (breath * 4.5f + smoothedLevel * 18f) * d else (breath * 2.5f) * d
 
             val outerRadius = (16f * d + expansion).coerceAtLeast(4f)
             orbPaint.shader = RadialGradient(
@@ -577,7 +588,7 @@ class RuachOverlayService : Service() {
             )
             canvas.drawCircle(cx, cy, outerRadius, orbPaint)
 
-            val coreRadius = (7f * d + (if (active) smoothedLevel * 3f * d else 0f)).coerceAtLeast(2f)
+            val coreRadius = (6.5f * d + (if (active) smoothedLevel * 6.5f * d else 0f)).coerceAtLeast(2f)
             orbPaint.shader = RadialGradient(
                 cx,
                 cy,

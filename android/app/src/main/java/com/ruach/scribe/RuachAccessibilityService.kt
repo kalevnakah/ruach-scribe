@@ -13,10 +13,18 @@ class RuachAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         instance = this
+        updateTextFieldFocusState()
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        // No passive scraping needed; only used on-demand when pasting dictation
+        updateTextFieldFocusState()
+    }
+
+    private fun updateTextFieldFocusState() {
+        val root = rootInActiveWindow
+        val focused = root?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+            ?: findEditableNode(root)
+        _isTextFieldFocused.value = focused != null && focused.isEditable
     }
 
     override fun onInterrupt() {}
@@ -75,6 +83,9 @@ class RuachAccessibilityService : AccessibilityService() {
         @Volatile
         var instance: RuachAccessibilityService? = null
             private set
+
+        private val _isTextFieldFocused = kotlinx.coroutines.flow.MutableStateFlow(false)
+        val isTextFieldFocused: kotlinx.coroutines.flow.StateFlow<Boolean> = _isTextFieldFocused
 
         fun copyAndAutoPaste(context: Context, text: String): Boolean {
             if (text.isBlank()) return false
