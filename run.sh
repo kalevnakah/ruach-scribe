@@ -33,6 +33,32 @@ for f in config.json history.json; do
 done
 rmdir "$APP_DIR/.private_local" 2>/dev/null || true
 
+# Install app icon and update App Drawer launcher (~/.local/share/applications/ruach-scribe.desktop)
+ICON_PATH="$APP_DIR/assets/ruach-scribe.png"
+mkdir -p "$HOME/.local/share/icons/hicolor/512x512/apps"
+mkdir -p "$HOME/.local/share/icons/hicolor/256x256/apps"
+mkdir -p "$HOME/.local/share/icons/hicolor/64x64/apps"
+cp -f "$APP_DIR/assets/ruach-scribe.png" "$HOME/.local/share/icons/hicolor/512x512/apps/ruach-scribe.png" 2>/dev/null || true
+cp -f "$APP_DIR/assets/ruach-scribe-256.png" "$HOME/.local/share/icons/hicolor/256x256/apps/ruach-scribe.png" 2>/dev/null || true
+cp -f "$APP_DIR/assets/ruach-scribe-64.png" "$HOME/.local/share/icons/hicolor/64x64/apps/ruach-scribe.png" 2>/dev/null || true
+
+mkdir -p "$HOME/.local/share/applications"
+cat > "$HOME/.local/share/applications/ruach-scribe.desktop" <<EOF
+[Desktop Entry]
+Type=Application
+Name=Ruach Scribe
+Comment=Ethereal Voice Dictation & AI Transcription
+Exec="$APP_DIR/run.sh" --foreground
+Icon=$ICON_PATH
+Path=$APP_DIR
+Terminal=false
+Categories=Utility;AudioVideo;Accessibility;
+StartupNotify=false
+EOF
+chmod +x "$HOME/.local/share/applications/ruach-scribe.desktop"
+gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
+update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
+
 # Ensure login autostart entry is installed unless explicitly disabled in config.json
 AUTOSTART_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/autostart"
 if [ ! -f "$USER_CFG_DIR/config.json" ] || ! grep -q '"autostart": *false' "$USER_CFG_DIR/config.json" 2>/dev/null; then
@@ -43,6 +69,7 @@ Type=Application
 Name=Ruach Scribe
 Comment=Ethereal Voice Dictation & AI Transcription
 Exec="$APP_DIR/run.sh" --foreground
+Icon=$ICON_PATH
 Path=$APP_DIR
 Terminal=false
 Hidden=false
@@ -79,5 +106,5 @@ else
     BG_PID=$!
     disown "$BG_PID" 2>/dev/null || true
     echo "Ruach Scribe is now running in the background (PID: $BG_PID)."
-    echo "Login autostart is enabled at: $AUTOSTART_DIR/ruach-scribe.desktop"
+    echo "App Drawer icon & Login autostart updated!"
 fi

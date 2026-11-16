@@ -45,14 +45,23 @@ echo "[4/5] Installing Python packages from requirements.txt..."
 "$APP_DIR/.venv/bin/python" -m pip install --upgrade pip
 "$APP_DIR/.venv/bin/python" -m pip install -r "$APP_DIR/requirements.txt"
 
-echo "[5/5] Creating Linux desktop launcher..."
+echo "[5/5] Creating Linux desktop launcher & installing app icon..."
+ICON_PATH="$APP_DIR/assets/ruach-scribe.png"
+mkdir -p "$HOME/.local/share/icons/hicolor/512x512/apps"
+mkdir -p "$HOME/.local/share/icons/hicolor/256x256/apps"
+mkdir -p "$HOME/.local/share/icons/hicolor/64x64/apps"
+cp -f "$APP_DIR/assets/ruach-scribe.png" "$HOME/.local/share/icons/hicolor/512x512/apps/ruach-scribe.png" 2>/dev/null || true
+cp -f "$APP_DIR/assets/ruach-scribe-256.png" "$HOME/.local/share/icons/hicolor/256x256/apps/ruach-scribe.png" 2>/dev/null || true
+cp -f "$APP_DIR/assets/ruach-scribe-64.png" "$HOME/.local/share/icons/hicolor/64x64/apps/ruach-scribe.png" 2>/dev/null || true
+
 mkdir -p "$HOME/.local/share/applications"
 cat > "$HOME/.local/share/applications/ruach-scribe.desktop" <<EOF
 [Desktop Entry]
 Type=Application
 Name=Ruach Scribe
 Comment=Ethereal Voice Dictation & AI Transcription
-Exec="$APP_DIR/run.sh"
+Exec="$APP_DIR/run.sh" --foreground
+Icon=$ICON_PATH
 Path=$APP_DIR
 Terminal=false
 Categories=Utility;AudioVideo;Accessibility;
@@ -68,6 +77,7 @@ Type=Application
 Name=Ruach Scribe
 Comment=Ethereal Voice Dictation & AI Transcription
 Exec="$APP_DIR/run.sh" --foreground
+Icon=$ICON_PATH
 Path=$APP_DIR
 Terminal=false
 Hidden=false

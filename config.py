@@ -43,12 +43,14 @@ def sync_autostart_desktop_entry(enabled: bool = True) -> bool:
         if enabled:
             autostart_dir.mkdir(parents=True, exist_ok=True)
             run_script = REPO_DIR / "run.sh"
+            icon_path = REPO_DIR / "assets" / "ruach-scribe.png"
             content = (
                 "[Desktop Entry]\n"
                 "Type=Application\n"
                 "Name=Ruach Scribe\n"
                 "Comment=Ethereal Voice Dictation & AI Transcription\n"
                 f'Exec="{run_script}" --foreground\n'
+                f"Icon={icon_path}\n"
                 f"Path={REPO_DIR}\n"
                 "Terminal=false\n"
                 "Hidden=false\n"

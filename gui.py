@@ -2,6 +2,7 @@ import getpass
 import math
 import os
 import subprocess
+from pathlib import Path
 from typing import Callable, Optional, Tuple
 
 from PyQt6.QtCore import QPointF, QRect, QRectF, Qt, QTimer, pyqtSignal
@@ -65,8 +66,14 @@ POSITION_OPTIONS = [
 ]
 
 
+ICON_PATH = Path(__file__).resolve().parent / "assets" / "ruach-scribe.png"
+
+
 def create_ruach_icon(size: int = 64) -> QIcon:
-    """Generate an in-memory ethereal glowing cyan/white orb icon for the tray & window."""
+    """Load the Ruach Scribe app icon from assets/ruach-scribe.png (with programmatic fallback)."""
+    if ICON_PATH.exists():
+        return QIcon(str(ICON_PATH))
+
     pixmap = QPixmap(size, size)
     pixmap.fill(Qt.GlobalColor.transparent)
 

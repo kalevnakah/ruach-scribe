@@ -1,5 +1,9 @@
 # Ruach Scribe
 
+<p align="center">
+  <img src="assets/ruach-scribe-256.png" alt="Ruach Scribe Logo" width="140" />
+</p>
+
 **Ruach Scribe** is an ethereal, low-latency voice dictation and AI transcription utility for Debian/Ubuntu Linux (Wayland & X11). Hold your global shortcut key to summon a calm, pulsing cyan/white breath aura, speak naturally (even changing your mind mid-sentence with *"scratch that"*), and release to let **Google Gemini** strip filler words and auto-paste polished text directly into your focused window.
 
 ---
