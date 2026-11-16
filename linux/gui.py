@@ -225,7 +225,7 @@ class RuachOverlay(QWidget):
     def _tick(self) -> None:
         self.phase += 0.06
         self.swirl_angle = (self.swirl_angle + 4.8) % 360.0
-        self.smoothed_level = self.smoothed_level * 0.80 + self.audio_level * 0.20
+        self.smoothed_level = self.smoothed_level * 0.55 + self.audio_level * 0.45
         self.update()
 
     def paintEvent(self, event) -> None:
@@ -288,11 +288,11 @@ class RuachOverlay(QWidget):
         self, painter: QPainter, center: QPointF, locked: bool = False
     ) -> None:
         breath = (math.sin(self.phase) + 1.0) * 0.5
-        expansion = breath * 6.5 + self.smoothed_level * 14.0
+        expansion = breath * 4.5 + self.smoothed_level * 18.0
 
-        outer_radius = 20.0 + expansion
-        mid_radius = 13.5 + expansion * 0.55
-        core_radius = 7.5 + breath * 1.8 + self.smoothed_level * 3.5
+        outer_radius = 18.0 + expansion
+        mid_radius = 12.5 + expansion * 0.60
+        core_radius = 6.5 + breath * 1.4 + self.smoothed_level * 6.5
 
         outer_grad = QRadialGradient(center, outer_radius)
         if locked:

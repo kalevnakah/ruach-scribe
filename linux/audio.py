@@ -53,15 +53,36 @@ class AudioRecorder:
             self.is_recording = True
 
         try:
-            self._stream = sd.InputStream(
-                samplerate=self.sample_rate,
-                blocksize=1024,
-                latency="low",
-                channels=self.channels,
-                dtype="int16",
-                device=device_index,
-                callback=self._audio_callback,
-            )
+            dev_info = sd.query_devices(device_index, "input")
+            default_sr = int(dev_info.get("default_samplerate", 44100))
+            attempts = [
+                (self.sample_rate, self.channels),
+                (default_sr, self.channels),
+                (default_sr, 2),
+                (48000, 1),
+                (48000, 2),
+                (44100, 1),
+                (44100, 2),
+            ]
+            last_err = None
+            for sr, ch in attempts:
+                try:
+                    self._stream = sd.InputStream(
+                        samplerate=sr,
+                        blocksize=1024,
+                        latency="low",
+                        channels=ch,
+                        dtype="int16",
+                        device=device_index,
+                        callback=self._audio_callback,
+                    )
+                    self.sample_rate = sr
+                    self.channels = ch
+                    break
+                except sd.PortAudioError as e:
+                    last_err = e
+            if self._stream is None:
+                raise last_err or RuntimeError("No supported audio input configuration")
             self._stream.start()
         except Exception as e:
             with self._lock:
