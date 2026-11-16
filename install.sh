@@ -61,6 +61,23 @@ EOF
 
 chmod +x "$HOME/.local/share/applications/ruach-scribe.desktop"
 
+mkdir -p "$HOME/.config/autostart"
+cat > "$HOME/.config/autostart/ruach-scribe.desktop" <<EOF
+[Desktop Entry]
+Type=Application
+Name=Ruach Scribe
+Comment=Ethereal Voice Dictation & AI Transcription
+Exec="$APP_DIR/run.sh" --foreground
+Path=$APP_DIR
+Terminal=false
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+X-GNOME-Autostart-Delay=3
+StartupNotify=false
+EOF
+chmod +x "$HOME/.config/autostart/ruach-scribe.desktop"
+
 echo ""
 echo "Installation complete!"
 echo "You can now launch Ruach Scribe by running:"

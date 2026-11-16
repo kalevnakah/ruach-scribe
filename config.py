@@ -20,7 +20,6 @@ def get_user_config_path() -> Path:
 
     try:
         user_dir.mkdir(parents=True, exist_ok=True)
-        # Auto-migrate any local config.json out of the Git repository folder
         for old_path in (LEGACY_CONFIG_PATH, PRIVATE_BACKUP_CONFIG_PATH):
             if old_path.exists():
                 if not target_path.exists():
@@ -29,9 +28,44 @@ def get_user_config_path() -> Path:
                 old_path.unlink()
         return target_path
     except OSError:
-        # Fallback if running inside a restricted sandbox where ~/.config is read-only
         PRIVATE_BACKUP_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
         return PRIVATE_BACKUP_CONFIG_PATH
+
+
+def sync_autostart_desktop_entry(enabled: bool = True) -> bool:
+    """Create or remove ~/.config/autostart/ruach-scribe.desktop for login autostart."""
+    xdg_config = os.environ.get("XDG_CONFIG_HOME")
+    base_dir = Path(xdg_config) if xdg_config else (Path.home() / ".config")
+    autostart_dir = base_dir / "autostart"
+    desktop_file = autostart_dir / "ruach-scribe.desktop"
+
+    try:
+        if enabled:
+            autostart_dir.mkdir(parents=True, exist_ok=True)
+            run_script = REPO_DIR / "run.sh"
+            content = (
+                "[Desktop Entry]\n"
+                "Type=Application\n"
+                "Name=Ruach Scribe\n"
+                "Comment=Ethereal Voice Dictation & AI Transcription\n"
+                f'Exec="{run_script}" --foreground\n'
+                f"Path={REPO_DIR}\n"
+                "Terminal=false\n"
+                "Hidden=false\n"
+                "NoDisplay=false\n"
+                "X-GNOME-Autostart-enabled=true\n"
+                "X-GNOME-Autostart-Delay=3\n"
+                "StartupNotify=false\n"
+            )
+            with open(desktop_file, "w", encoding="utf-8") as f:
+                f.write(content)
+            os.chmod(desktop_file, 0o755)
+        else:
+            if desktop_file.exists():
+                desktop_file.unlink()
+        return True
+    except OSError:
+        return False
 
 
 DEFAULT_PROMPT = (
@@ -75,6 +109,7 @@ DEFAULT_CONFIG = {
     "overlay_position": "bottom_center",
     "monitor_index": 0,  # 0 = Monitor 1, 1 = Monitor 2, etc.
     "paste_shortcut": "ctrl+v",  # "ctrl+v" or "shift+insert"
+    "autostart": True,  # Launch automatically on login
     "system_prompt": DEFAULT_PROMPT,
 }
 
@@ -123,6 +158,10 @@ class ConfigManager:
                     self.data["monitor_index"] = 0
                     changed = True
 
+                if "autostart" not in self.data:
+                    self.data["autostart"] = True
+                    changed = True
+
                 if self.data.get("system_prompt", "").strip() in LEGACY_PROMPTS:
                     self.data["system_prompt"] = DEFAULT_PROMPT
                     changed = True
@@ -135,6 +174,8 @@ class ConfigManager:
                 )
         else:
             self.save()
+
+        sync_autostart_desktop_entry(bool(self.data.get("autostart", True)))
         return self.data
 
     def save(self) -> None:
@@ -146,6 +187,7 @@ class ConfigManager:
                 os.chmod(self.config_path, 0o600)
             except OSError:
                 pass
+            sync_autostart_desktop_entry(bool(self.data.get("autostart", True)))
         except Exception as e:
             print(f"[Ruach Scribe] Error saving config.json: {e}")
 

@@ -20,6 +20,7 @@ from PyQt6.QtGui import (
 )
 from PyQt6.QtWidgets import (
     QApplication,
+    QCheckBox,
     QComboBox,
     QDialog,
     QFormLayout,
@@ -593,7 +594,12 @@ class SettingsWindow(QDialog):
         self.paste_combo.addItem("Shift + Insert (Terminals & Universal)", "shift+insert")
         form.addRow("Paste Method:", self.paste_combo)
 
-        # 8. System Prompt
+        # 8. Autostart on Login
+        self.autostart_checkbox = QCheckBox("Start Ruach Scribe automatically in background on login")
+        self.autostart_checkbox.setStyleSheet("color: #e2f1f8; font-size: 13px;")
+        form.addRow("Startup:", self.autostart_checkbox)
+
+        # 9. System Prompt
         self.prompt_edit = QPlainTextEdit()
         self.prompt_edit.setFixedHeight(85)
         form.addRow("System Prompt:", self.prompt_edit)
@@ -934,6 +940,8 @@ class SettingsWindow(QDialog):
         if paste_idx >= 0:
             self.paste_combo.setCurrentIndex(paste_idx)
 
+        self.autostart_checkbox.setChecked(bool(self.config.get("autostart", True)))
+
         self.prompt_edit.setPlainText(self.config.get("system_prompt", DEFAULT_PROMPT))
 
     def _save_settings(self) -> None:
@@ -947,6 +955,7 @@ class SettingsWindow(QDialog):
         self.config.data["overlay_position"] = self.position_combo.currentData()
         self.config.data["monitor_index"] = int(self.monitor_combo.currentData() or 0)
         self.config.data["paste_shortcut"] = self.paste_combo.currentData()
+        self.config.data["autostart"] = bool(self.autostart_checkbox.isChecked())
         self.config.data["system_prompt"] = prompt_str
         self.config.save()
 

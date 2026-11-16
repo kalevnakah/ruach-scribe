@@ -33,12 +33,51 @@ for f in config.json history.json; do
 done
 rmdir "$APP_DIR/.private_local" 2>/dev/null || true
 
+# Ensure login autostart entry is installed unless explicitly disabled in config.json
+AUTOSTART_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/autostart"
+if [ ! -f "$USER_CFG_DIR/config.json" ] || ! grep -q '"autostart": *false' "$USER_CFG_DIR/config.json" 2>/dev/null; then
+    mkdir -p "$AUTOSTART_DIR"
+    cat > "$AUTOSTART_DIR/ruach-scribe.desktop" <<EOF
+[Desktop Entry]
+Type=Application
+Name=Ruach Scribe
+Comment=Ethereal Voice Dictation & AI Transcription
+Exec="$APP_DIR/run.sh" --foreground
+Path=$APP_DIR
+Terminal=false
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+X-GNOME-Autostart-Delay=3
+StartupNotify=false
+EOF
+    chmod +x "$AUTOSTART_DIR/ruach-scribe.desktop"
+fi
+
 # Stop any previously running Ruach Scribe instance so hotkeys don't conflict
 pkill -f "$APP_DIR/main.py" 2>/dev/null || true
+
+# Auto-detect DISPLAY if launched by desktop autostart before DISPLAY was exported
+if [ -z "$DISPLAY" ]; then
+    for sock in /tmp/.X11-unix/X*; do
+        if [ -e "$sock" ]; then
+            export DISPLAY=":${sock##*/X}"
+            break
+        fi
+    done
+fi
 
 # Use XWayland (xcb) when DISPLAY is present so Monitor 1 & Monitor 2 placement is respected
 if [ "$XDG_SESSION_TYPE" = "wayland" ] && [ -n "$DISPLAY" ]; then
     export QT_QPA_PLATFORM=xcb
 fi
 
-exec "$APP_DIR/.venv/bin/python" "$APP_DIR/main.py" "$@"
+if [ "$1" = "--foreground" ]; then
+    exec "$APP_DIR/.venv/bin/python" "$APP_DIR/main.py"
+else
+    nohup "$APP_DIR/.venv/bin/python" "$APP_DIR/main.py" >/dev/null 2>&1 &
+    BG_PID=$!
+    disown "$BG_PID" 2>/dev/null || true
+    echo "Ruach Scribe is now running in the background (PID: $BG_PID)."
+    echo "Login autostart is enabled at: $AUTOSTART_DIR/ruach-scribe.desktop"
+fi
