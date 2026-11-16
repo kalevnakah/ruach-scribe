@@ -1,0 +1,23 @@
+# Private User Configuration, API Keys, and Transcription History
+config.json
+history.json
+*.log
+.private_local/
+.env
+.env.*
+
+# Python Virtual Environment & Bytecode
+.venv/
+venv/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Temporary Audio & OS Files
+*.wav
+*.mp3
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
