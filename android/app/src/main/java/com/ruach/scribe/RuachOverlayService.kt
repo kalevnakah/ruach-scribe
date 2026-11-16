@@ -156,8 +156,8 @@ class RuachOverlayService : Service() {
 
     private fun showFloatingOverlay() {
         val density = resources.displayMetrics.density
-        val pillW = (240 * density).toInt()
-        val pillH = (76 * density).toInt()
+        val pillW = (56 * density).toInt()
+        val pillH = (56 * density).toInt()
 
         val params = WindowManager.LayoutParams(
             pillW,
@@ -429,13 +429,28 @@ class RuachOverlayService : Service() {
                 audioLevel = 0f
                 smoothedLevel = 0f
             }
+            val params = layoutParams as? WindowManager.LayoutParams
+            if (params != null && isAttachedToWindow) {
+                val d = resources.displayMetrics.density
+                val targetW = if (newState == OverlayState.LISTENING || newState == OverlayState.LOCKED) {
+                    (116 * d).toInt()
+                } else {
+                    (56 * d).toInt()
+                }
+                if (params.width != targetW) {
+                    params.width = targetW
+                    try {
+                        windowManager.updateViewLayout(this, params)
+                    } catch (_: Exception) {
+                    }
+                }
+            }
             invalidate()
         }
 
         @SuppressLint("ClickableViewAccessibility")
         override fun onTouchEvent(event: MotionEvent): Boolean {
             val params = layoutParams as? WindowManager.LayoutParams ?: return false
-            val now = SystemClock.elapsedRealtime()
             val touchSlop = 18f * resources.displayMetrics.density
 
             when (event.actionMasked) {
@@ -445,35 +460,6 @@ class RuachOverlayService : Service() {
                     downRawY = event.rawY
                     startParamX = params.x
                     startParamY = params.y
-                    pressDownTime = now
-
-                    when (state) {
-                        OverlayState.IDLE -> {
-                            justLockedOnThisPress = false
-                            onStartDictation(locked = false)
-                        }
-                        OverlayState.LISTENING -> {
-                            if (now - lastTapReleaseTime <= 420L) {
-                                // Second tap arrived -> Lock hands-free mode!
-                                mainHandler.removeCallbacks(singleTapCancelRunnable)
-                                justLockedOnThisPress = true
-                                lockedFirstTapTime = 0L
-                                setOverlayState(OverlayState.LOCKED)
-                                vibrateTick()
-                            }
-                        }
-                        OverlayState.LOCKED -> {
-                            justLockedOnThisPress = false
-                            if (now - lockedFirstTapTime <= 450L) {
-                                // Double-tap while locked -> Stop and transcribe!
-                                lockedFirstTapTime = 0L
-                                onStopAndTranscribe()
-                            } else {
-                                lockedFirstTapTime = now
-                            }
-                        }
-                        OverlayState.PROCESSING -> {}
-                    }
                     return true
                 }
 
@@ -482,10 +468,6 @@ class RuachOverlayService : Service() {
                     val dy = event.rawY - downRawY
                     if (!isDragging && (abs(dx) > touchSlop || abs(dy) > touchSlop)) {
                         isDragging = true
-                        if (state == OverlayState.LISTENING && (now - pressDownTime) < 350L) {
-                            mainHandler.removeCallbacks(singleTapCancelRunnable)
-                            onCancelDictation()
-                        }
                     }
                     if (isDragging) {
                         val horizSign = if ((params.gravity and Gravity.END) == Gravity.END) -1 else 1
@@ -500,30 +482,21 @@ class RuachOverlayService : Service() {
                     return true
                 }
 
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                MotionEvent.ACTION_UP -> {
                     if (isDragging) {
                         isDragging = false
                         return true
                     }
-
-                    val heldMs = now - pressDownTime
-                    if (state == OverlayState.LISTENING) {
-                        if (heldMs >= 300L) {
-                            // Held to talk -> release triggers transcription & auto-paste!
-                            onStopAndTranscribe()
-                        } else {
-                            // Quick tap #1 -> wait up to 420ms for tap #2 to lock
-                            lastTapReleaseTime = now
-                            mainHandler.removeCallbacks(singleTapCancelRunnable)
-                            mainHandler.postDelayed(singleTapCancelRunnable, 420L)
-                        }
-                    } else if (state == OverlayState.LOCKED) {
-                        if (justLockedOnThisPress) {
-                            justLockedOnThisPress = false
-                        } else if (heldMs >= 550L) {
-                            onStopAndTranscribe()
-                        }
+                    when (state) {
+                        OverlayState.IDLE -> onStartDictation(locked = false)
+                        OverlayState.LISTENING, OverlayState.LOCKED -> onStopAndTranscribe()
+                        OverlayState.PROCESSING -> {}
                     }
+                    return true
+                }
+
+                MotionEvent.ACTION_CANCEL -> {
+                    isDragging = false
                     return true
                 }
             }
@@ -536,43 +509,46 @@ class RuachOverlayService : Service() {
             val w = width.toFloat()
             val h = height.toFloat()
 
-            pillRect.set(6f * d, 6f * d, w - 6f * d, h - 6f * d)
+            pillRect.set(4f * d, 4f * d, w - 4f * d, h - 4f * d)
             bgPaint.color = Color.argb(225, 9, 16, 26)
-            canvas.drawRoundRect(pillRect, 28f * d, 28f * d, bgPaint)
+            canvas.drawRoundRect(pillRect, 26f * d, 26f * d, bgPaint)
 
             borderPaint.color = when (state) {
                 OverlayState.LOCKED -> Color.argb(180, 128, 255, 219)
-                OverlayState.LISTENING -> Color.argb(140, 100, 223, 223)
+                OverlayState.LISTENING -> Color.argb(160, 100, 223, 223)
                 OverlayState.PROCESSING -> Color.argb(160, 116, 185, 255)
-                OverlayState.IDLE -> Color.argb(75, 130, 235, 255)
+                OverlayState.IDLE -> Color.argb(95, 130, 235, 255)
             }
-            canvas.drawRoundRect(pillRect, 28f * d, 28f * d, borderPaint)
+            canvas.drawRoundRect(pillRect, 26f * d, 26f * d, borderPaint)
 
-            val cx = 36f * d
             val cy = h / 2f
 
             when (state) {
                 OverlayState.IDLE -> {
-                    drawListeningAura(canvas, cx, cy, d, active = false, locked = false)
-                    canvas.drawText("Ruach Scribe", 68f * d, cy - 4f * d, titlePaint)
-                    canvas.drawText("Hold to talk • 2x tap lock", 68f * d, cy + 14f * d, subPaint)
+                    drawListeningAura(canvas, w / 2f, cy, d, active = false, locked = false)
                 }
-                OverlayState.LISTENING -> {
-                    drawListeningAura(canvas, cx, cy, d, active = true, locked = false)
-                    canvas.drawText("Listening...", 68f * d, cy - 4f * d, titlePaint)
-                    canvas.drawText("Release to paste • 2x lock", 68f * d, cy + 14f * d, subPaint)
-                }
-                OverlayState.LOCKED -> {
-                    drawListeningAura(canvas, cx, cy, d, active = true, locked = true)
-                    canvas.drawText("Listening (Locked)", 68f * d, cy - 4f * d, titlePaint)
-                    canvas.drawText("Double-tap to finish", 68f * d, cy + 14f * d, subPaint)
+                OverlayState.LISTENING, OverlayState.LOCKED -> {
+                    drawListeningAura(canvas, 28f * d, cy, d, active = true, locked = true)
+                    drawCheckMark(canvas, 86f * d, cy, d)
                 }
                 OverlayState.PROCESSING -> {
-                    drawProcessingSwirl(canvas, cx, cy, d)
-                    canvas.drawText("Distilling voice...", 68f * d, cy - 4f * d, titlePaint)
-                    canvas.drawText("Cleaning with Gemini AI", 68f * d, cy + 14f * d, subPaint)
+                    drawProcessingSwirl(canvas, w / 2f, cy, d)
                 }
             }
+        }
+
+        private fun drawCheckMark(canvas: Canvas, cx: Float, cy: Float, d: Float) {
+            swirlPaint.shader = null
+            swirlPaint.color = Color.argb(245, 128, 255, 219)
+            swirlPaint.strokeWidth = 3.0f * d
+            swirlPaint.strokeCap = Paint.Cap.ROUND
+            swirlPaint.strokeJoin = Paint.Join.ROUND
+            val path = android.graphics.Path().apply {
+                moveTo(cx - 8f * d, cy + 0.5f * d)
+                lineTo(cx - 2f * d, cy + 6.5f * d)
+                lineTo(cx + 9f * d, cy - 6.5f * d)
+            }
+            canvas.drawPath(path, swirlPaint)
         }
 
         private fun drawListeningAura(
