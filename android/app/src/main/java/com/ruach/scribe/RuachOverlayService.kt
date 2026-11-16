@@ -434,7 +434,7 @@ class RuachOverlayService : Service() {
 
         @SuppressLint("ClickableViewAccessibility")
         override fun onTouchEvent(event: MotionEvent): Boolean {
-            val params = layoutParams ?: return false
+            val params = layoutParams as? WindowManager.LayoutParams ?: return false
             val now = SystemClock.elapsedRealtime()
             val touchSlop = 18f * resources.displayMetrics.density
 
