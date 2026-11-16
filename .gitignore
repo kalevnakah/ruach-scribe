@@ -3,16 +3,29 @@ config.json
 history.json
 *.log
 .private_local/
+linux/.private_local/
 .env
 .env.*
 
 # Python Virtual Environment & Bytecode
 .venv/
+linux/.venv/
 venv/
 ENV/
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Android Build & Local SDK Files
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+*.apk
+*.aab
+*.keystore
+*.jks
 
 # Temporary Audio & OS Files
 *.wav

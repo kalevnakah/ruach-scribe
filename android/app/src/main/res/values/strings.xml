@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Ruach Scribe</string>
+    <string name="accessibility_service_label">Ruach Scribe Auto-Paste</string>
+    <string name="accessibility_service_description">Allows Ruach Scribe to automatically paste transcribed voice dictation directly into whichever text box is currently focused on your screen.</string>
+</resources>
