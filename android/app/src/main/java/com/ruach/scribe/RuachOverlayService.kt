@@ -17,6 +17,9 @@ import android.graphics.RadialGradient
 import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.SweepGradient
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -57,11 +60,14 @@ class RuachOverlayService : Service() {
     private var overlayView: RuachFloatingView? = null
     private var layoutParams: WindowManager.LayoutParams? = null
     private lateinit var recorder: AudioRecorder
+    private lateinit var audioManager: AudioManager
+    private var audioFocusRequest: AudioFocusRequest? = null
 
     override fun onCreate() {
         super.onCreate()
         config = ConfigManager(this)
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         recorder = AudioRecorder(
             onAmplitude = { level ->
                 overlayView?.setAudioLevel(level)
@@ -94,6 +100,7 @@ class RuachOverlayService : Service() {
 
     override fun onDestroy() {
         _isRunning.value = false
+        abandonRecordingAudioFocus()
         try {
             if (recorder.isRecording) {
                 recorder.stopBytes()
@@ -148,7 +155,7 @@ class RuachOverlayService : Service() {
 
         return builder
             .setContentTitle("Ruach Scribe Active")
-            .setContentText("Hold bubble to talk & release to paste • Double-tap to lock")
+            .setContentText("Tap bubble to dictate • Tap check mark to paste")
             .setSmallIcon(android.R.drawable.ic_btn_speak_now)
             .setContentIntent(openAppIntent)
             .addAction(
@@ -248,6 +255,38 @@ class RuachOverlayService : Service() {
         }
     }
 
+    private fun requestRecordingAudioFocus() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+                .setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ASSISTANCE_ACCESSIBILITY)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                        .build()
+                )
+                .build()
+            audioFocusRequest = req
+            audioManager.requestAudioFocus(req)
+        } else {
+            @Suppress("DEPRECATION")
+            audioManager.requestAudioFocus(
+                null,
+                AudioManager.STREAM_MUSIC,
+                AudioManager.AUDIOFOCUS_GAIN_TRANSIENT
+            )
+        }
+    }
+
+    private fun abandonRecordingAudioFocus() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            audioFocusRequest?.let { audioManager.abandonAudioFocusRequest(it) }
+            audioFocusRequest = null
+        } else {
+            @Suppress("DEPRECATION")
+            audioManager.abandonAudioFocus(null)
+        }
+    }
+
     private fun onStartDictation(locked: Boolean) {
         if (overlayView?.state == OverlayState.PROCESSING) return
         val apiKey = config.apiKey
@@ -263,6 +302,7 @@ class RuachOverlayService : Service() {
 
         try {
             if (!recorder.isRecording) {
+                requestRecordingAudioFocus()
                 recorder.start()
                 vibrateTick()
             }
@@ -270,6 +310,7 @@ class RuachOverlayService : Service() {
                 if (locked) OverlayState.LOCKED else OverlayState.LISTENING
             )
         } catch (e: Exception) {
+            abandonRecordingAudioFocus()
             overlayView?.setOverlayState(OverlayState.IDLE)
             val msg = e.message ?: "Microphone error"
             HistoryManager.setLastError(msg)
@@ -282,6 +323,7 @@ class RuachOverlayService : Service() {
             recorder.stopBytes()
         } catch (_: Exception) {
         }
+        abandonRecordingAudioFocus()
         overlayView?.setOverlayState(OverlayState.IDLE)
     }
 
@@ -290,10 +332,12 @@ class RuachOverlayService : Service() {
         val wavBytes = try {
             recorder.stopBytes()
         } catch (e: Exception) {
+            abandonRecordingAudioFocus()
             overlayView?.setOverlayState(OverlayState.IDLE)
             HistoryManager.setLastError("Audio capture error: ${e.message}")
             return
         }
+        abandonRecordingAudioFocus()
 
         if (wavBytes == null || wavBytes.size < 100) {
             overlayView?.setOverlayState(OverlayState.IDLE)
@@ -360,8 +404,8 @@ class RuachOverlayService : Service() {
 
     /**
      * Custom floating view rendering the ethereal Ruach aura and handling:
-     * - Hold-to-Talk (>= 300ms hold -> release to transcribe)
-     * - Double-Tap to Lock (< 420ms between taps -> hands-free lock; double-tap to stop)
+     * - Tap to start dictation
+     * - Tap check mark to stop, transcribe, and auto-paste
      * - Dragging to reposition on screen
      */
     inner class RuachFloatingView(context: Context) : View(context) {

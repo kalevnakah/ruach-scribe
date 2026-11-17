@@ -46,7 +46,7 @@ from hotkey_manager import HotkeyManager
 
 HOTKEY_PRESETS = [
     ("Ctrl + Alt (Hold or Double-Tap)", "<ctrl>+<alt>"),
-    ("Right Ctrl (Wispr Flow Style)", "ctrl_r"),
+    ("Right Ctrl (Single-Key)", "ctrl_r"),
     ("Right Alt", "alt_r"),
     ("Ctrl + Super (Windows Key)", "<ctrl>+<cmd>"),
     ("Ctrl + Shift + Space", "<ctrl>+<shift>+<space>"),

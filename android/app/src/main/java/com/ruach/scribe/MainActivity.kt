@@ -182,7 +182,7 @@ fun RuachMainScreen() {
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Hold bubble to talk & release to paste • 2x tap to lock",
+                    text = "Tap bubble to dictate • Tap check mark to finish",
                     color = RuachTextSecondary,
                     fontSize = 12.sp
                 )

@@ -28,7 +28,7 @@
             </intent-filter>
         </activity>
 
-        <!-- Floating Ruach Aura Bubble Service (Hold-to-Talk & Double-Tap to Lock) -->
+        <!-- Floating Ruach Aura Bubble Service (Tap to Dictate & Tap Check Mark to Finish) -->
         <service
             android:name=".RuachOverlayService"
             android:enabled="true"

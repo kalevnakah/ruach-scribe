@@ -5,8 +5,7 @@ Native Kotlin & Jetpack Compose edition of **Ruach Scribe** for Android phones (
 ## Features on Android
 * **Floating Ethereal Ruach Bubble (`RuachOverlayService`):**
   * Floats over any app (Messages, WhatsApp, Gmail, Chrome, Notes, Slack, etc.) with the same 60 FPS pulsing cyan/mint/white breath aura and swirling processing state.
-  * **Hold-to-Talk:** Press and hold the floating Ruach bubble while speaking; lift your finger to transcribe and auto-paste into the active text box.
-  * **Double-Tap to Lock:** Double-tap the floating bubble quickly to lock hands-free recording; double-tap again to finish.
+  * **Tap-to-Dictate:** Tap the floating Ruach dot when a text box is focused to start dictating; tap the check mark to stop, transcribe, and auto-paste into the active text box.
   * **Draggable + 8 Screen Anchor Positions:** Anchor to `Bottom Center`, `Bottom Right`, `Bottom Left`, `Left Center`, `Right Center`, `Top Center`, `Top Right`, or `Top Left`, or drag it with your finger.
 * **Auto-Paste into Any Focused Text Box (`RuachAccessibilityService`):**
   * Automatically injects the cleaned transcription directly into whatever text field is focused on your screen (and copies to your clipboard).

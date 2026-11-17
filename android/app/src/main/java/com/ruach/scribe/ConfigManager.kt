@@ -32,7 +32,7 @@ class ConfigManager(context: Context) {
 
     companion object {
         const val DEFAULT_PROMPT =
-            "You are an intelligent voice dictation editor (like Wispr Flow). " +
+            "You are an intelligent voice dictation editor. " +
                 "Transform the user's spoken audio into clean, polished written text by following these strict rules:\n" +
                 "1. REMOVE ALL FILLERS & STUTTERS: Completely strip filler words (um, uh, ah, er, hmm, like, you know), " +
                 "stutters, and accidental word repetitions.\n" +

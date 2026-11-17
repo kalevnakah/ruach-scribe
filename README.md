@@ -15,7 +15,7 @@
   * Hold-to-Talk & Double-Tap to Lock global shortcut (`Ctrl + Alt`, `Right Ctrl`, etc.).
   * Multi-monitor support with 8 anchor positions, login autostart, and Before & After transcription history.
 * **[`android/`](android/)** — **Android Phone App (Kotlin + Jetpack Compose)**
-  * Floating Ruach Aura Bubble (`SYSTEM_ALERT_WINDOW`) with touch **Hold-to-Talk** and **Double-Tap to Lock**.
+  * Floating Ruach Aura Bubble (`SYSTEM_ALERT_WINDOW`) with **Tap-to-Dictate** and **Check Mark** to finish.
   * Automatic text injection into any focused Android input box via `RuachAccessibilityService`.
   * Same dark ethereal UI, custom System Prompt, 8 anchor positions, Boot Autostart, and Before & After Transcription History tab.
   * Includes a GitHub Actions workflow ([`.github/workflows/build-android-apk.yml`](.github/workflows/build-android-apk.yml)) that automatically builds an installable `.apk` in the cloud on every push.
