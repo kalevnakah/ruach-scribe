@@ -143,6 +143,11 @@ class AudioRecorder:
         if len(trimmed) < int(self.sample_rate * 0.15):
             return None
 
+        # Guard against faint background hum / key clicks
+        rms = float(np.sqrt(np.mean(trimmed.astype(np.float64) ** 2)))
+        if rms < 120.0:
+            return None
+
         buf = io.BytesIO()
         wavfile.write(buf, self.sample_rate, trimmed)
         return buf.getvalue()
