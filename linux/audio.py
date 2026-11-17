@@ -105,7 +105,7 @@ class AudioRecorder:
         # Threshold ~ 1.2% of max int16 amplitude (390 / 32768)
         voice_indices = np.where(flat > 390)[0]
         if len(voice_indices) == 0:
-            return audio_data
+            return audio_data[:0]
         pad = int(self.sample_rate * 0.12)  # Keep 120ms natural breath padding
         start_idx = max(0, int(voice_indices[0]) - pad)
         end_idx = min(len(audio_data), int(voice_indices[-1]) + pad)

@@ -112,6 +112,17 @@ class AudioRecorder(
             return null
         }
 
+        // Guard against faint background hum / tap clicks that barely cross the peak threshold
+        var sumSq = 0.0
+        for (s in trimmed) {
+            val d = s.toDouble()
+            sumSq += d * d
+        }
+        val rms = kotlin.math.sqrt(sumSq / trimmed.size)
+        if (rms < 120.0) {
+            return null
+        }
+
         return encodeWavBytes(trimmed, sampleRate)
     }
 
@@ -126,7 +137,7 @@ class AudioRecorder(
                 break
             }
         }
-        if (firstIdx == -1) return samples
+        if (firstIdx == -1) return ShortArray(0)
 
         for (i in samples.indices.reversed()) {
             if (abs(samples[i].toInt()) > threshold) {
